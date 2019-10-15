@@ -18,12 +18,19 @@
 
         public function onOpen(ConnectionInterface $conn) {
             $this->clients->attach($conn);
+            $conn->send(json_encode(["id" => $conn->resourceId, "type" => "connect"]));
             echo "Cliente conectado ({$conn->resourceId})" . PHP_EOL;
         }
 
         public function onMessage(ConnectionInterface $from, $data) {
+            $send_data = [
+                "message" => $data,
+                "type" => "message",
+                "from_id" => $from->resourceId
+            ];
+
             foreach ($this->clients as $client) {
-                $client->send($data);
+                $client->send(json_encode($send_data));
             }
     
             echo "Cliente {$from->resourceId} enviou uma mensagem: " . $data . PHP_EOL;

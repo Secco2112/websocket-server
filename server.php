@@ -291,6 +291,56 @@
 
                     $connection->send(json_encode($body));
                 }
+            } else if($type == "add_to_group") {
+                $user = $this->findClientBy("chatId", $data->user_id);
+
+                // Adicionar usuário ao grupo
+                $index_group = null;
+                if(isset($this->clients_sets["group"])) {
+                    foreach ($this->clients_sets["group"] as $key => $group) {
+                        if($group["group_id"] == $data->group_id) {
+                            $index_group = $key;
+                            break;
+                        }
+                    }
+                }
+
+                $handle = $this->clients_sets["group"][$index_group];
+
+                $user_in_group = false;
+                $user_index = null;
+                foreach ($handle["users"] as $key => $u) {
+                    if($u->chatId == $user->chatId) {
+                        $user_in_group = true;
+                        $user_index = $key;
+                        break;
+                    }
+                }
+
+                if($user_in_group) {
+                    unset($handle["users"][$user_index]);
+                }
+                if($user) {
+                    $handle["users"][] = $user;
+                }
+
+                $handle["users"] = array_values($handle["users"]);
+                $this->clients_sets["group"][$index_group] = $handle;
+
+
+                if($user) {
+                    $connection = $this->findConnectionClientBy("resourceId", $user->socketId);
+
+                    if($connection) {
+                        $body = [
+                            "type" => "add_to_group",
+                            "group_id" => $data->group_id,
+                            "group_name" => $data->group_name
+                        ];
+
+                        $connection->send(json_encode($body));
+                    }
+                }
             }
         }
     
